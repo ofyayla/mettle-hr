@@ -1,0 +1,18 @@
+{
+    "name": "mettle-frontend",
+    "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "build": "npm run build --workspaces",
+        "dev": "npm run dev --workspaces",
+        "lint": "npm run lint --workspaces"
+    },
+    "devDependencies": {
+        "turbo": "^2.3.3",
+        "prettier": "^3.2.5"
+    },
+    "packageManager": "npm@10.2.4"
+}
