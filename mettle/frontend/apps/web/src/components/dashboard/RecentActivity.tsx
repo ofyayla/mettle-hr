@@ -243,7 +243,7 @@ export function RecentActivity() {
     const groupOrder = ['today', 'yesterday', 'this_week', 'older'];
 
     return (
-        <div className="bg-card rounded-2xl border border-border/50 hover-neon-border flex flex-col h-full min-h-0">
+        <div className="bg-card rounded-2xl border border-border/50 hover-neon-border flex flex-col h-full min-h-0 group">
             {/* Header */}
             <div className="p-4 border-b border-border/30 flex items-center justify-between flex-shrink-0">
                 <h3 className="font-semibold text-sm">Recent Activity</h3>
@@ -251,8 +251,8 @@ export function RecentActivity() {
                     <button className="text-xs text-muted-foreground hover:text-emerald-700 dark:hover:text-primary transition-colors">
                         View All
                     </button>
-                    <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted">
-                        <ArrowUpRight className="w-3.5 h-3.5 text-primary" />
+                    <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
+                        <ArrowUpRight className="w-3.5 h-3.5" />
                     </div>
                 </div>
             </div>

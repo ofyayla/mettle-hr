@@ -88,7 +88,7 @@ export function LandingPage() {
     ];
 
     return (
-        <div className="flex flex-col min-h-full bg-background p-6 md:p-8">
+        <div className="flex flex-col min-h-full p-6 md:p-8">
             <div className="flex-1 flex flex-col items-center justify-center">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 max-w-7xl w-full">
                     {features.map((feature) => (

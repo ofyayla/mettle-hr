@@ -107,7 +107,7 @@ export function JobCard({ job, onEdit, onView, onDelete }: JobCardProps) {
                                 e.stopPropagation();
                                 onView(job);
                             }}
-                            className="h-9 w-9 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 shadow-sm shadow-primary/25"
+                            className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary/50 text-muted-foreground transition-all shrink-0 group-hover:bg-primary group-hover:text-primary-foreground"
                             title="View Details"
                         >
                             <ArrowUpRight className="w-4 h-4" />

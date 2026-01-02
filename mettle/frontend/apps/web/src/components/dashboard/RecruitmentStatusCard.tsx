@@ -45,7 +45,7 @@ export const RecruitmentStatusCard: React.FC<RecruitmentStatusCardProps> = ({
     return (
         <div
             className={cn(
-                "w-full bg-card rounded-2xl border border-border/50 shadow-sm p-6 flex flex-col h-full min-h-0 hover-neon-border",
+                "w-full bg-card rounded-2xl border border-border/50 shadow-sm p-6 flex flex-col h-full min-h-0 hover-neon-border group",
                 className
             )}
         >
@@ -53,8 +53,8 @@ export const RecruitmentStatusCard: React.FC<RecruitmentStatusCardProps> = ({
             <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-sm">Recruitment Status</h3>
                 <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted cursor-pointer hover:opacity-80 transition-opacity">
-                        <ArrowUpRight className="w-3.5 h-3.5 text-primary" />
+                    <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
+                        <ArrowUpRight className="w-3.5 h-3.5" />
                     </div>
                 </div>
             </div>

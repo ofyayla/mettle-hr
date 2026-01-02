@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-    Home, MessageSquare, CreditCard, Database, FileText,
-    Users, Sparkles, Search, Briefcase,
+    Home, Route, CreditCard, Database, FileText,
+    Users, Sparkles, Search, Briefcase, Calendar,
     PanelLeftClose,
     Headphones, Settings, LogOut, X
 } from 'lucide-react';
@@ -38,8 +38,9 @@ export function Sidebar() {
     const menuItems = [
         { icon: Home, label: 'Dashboard', path: '/' },
         { icon: Briefcase, label: 'Jobs', path: '/jobs' },
-        { icon: Users, label: 'Sourcing', path: '/talent-pool' }, // Module 1
-        { icon: MessageSquare, label: 'Pipeline', path: '/pipeline' }, // Module 3
+        { icon: Calendar, label: 'Planner', path: '/planner' },
+        { icon: Users, label: 'Candidates', path: '/candidates' }, // Module 1
+        { icon: Route, label: 'Pipeline', path: '/pipeline' }, // Module 3
         { icon: Sparkles, label: 'AI Assistant', path: '/ai-assistant' }, // Module 2
         { icon: FileText, label: 'Assessment', path: '/assessment' }, // Module 4 (Placeholder)
         { icon: CreditCard, label: 'Offer & Onboard', path: '/offer' }, // Module 5 (Placeholder)
@@ -49,7 +50,7 @@ export function Sidebar() {
     return (
         <div
             className={cn(
-                "flex flex-col flex-shrink-0 h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30",
+                "flex flex-col flex-shrink-0 h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30 border-r border-border",
                 collapsed ? "w-20" : "w-80"
             )}
         >

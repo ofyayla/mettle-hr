@@ -79,7 +79,7 @@ export function JobsHeader({
             <div className="flex gap-3 w-full sm:w-auto items-center">
                 {/* View Toggle */}
                 {onViewChange && (
-                    <div className="bg-muted p-1 rounded-lg flex gap-1 mr-2">
+                    <div className="bg-muted/50 p-1 rounded-md border border-border flex gap-1 mr-2">
                         <button
                             onClick={() => onViewChange('grid')}
                             className={cn("p-1.5 rounded-md transition-all", viewMode === 'grid' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
@@ -113,7 +113,7 @@ export function JobsHeader({
                             "p-2 rounded-xl border transition-all relative",
                             isFilterOpen || hasActiveFilters
                                 ? "bg-primary/10 border-primary/50 text-primary"
-                                : "border-border/50 hover:bg-muted/50 hover:border-border text-muted-foreground"
+                                : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border/40 text-muted-foreground hover:text-foreground"
                         )}
                     >
                         <Filter className="w-4 h-4" />

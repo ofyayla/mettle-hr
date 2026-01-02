@@ -14,15 +14,18 @@ export function DeleteConfirmationModal({ isOpen, onClose, onConfirm, title, des
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
+                e.stopImmediatePropagation();
+                e.preventDefault();
                 onClose();
             }
         };
 
         if (isOpen) {
-            window.addEventListener('keydown', handleKeyDown);
+            // Use capture phase to intercept event before other listeners
+            window.addEventListener('keydown', handleKeyDown, true);
         }
 
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
     }, [isOpen, onClose]);
 
     if (!isOpen) return null;

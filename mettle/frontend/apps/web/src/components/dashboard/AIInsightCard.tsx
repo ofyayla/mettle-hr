@@ -39,7 +39,7 @@ const topCandidates: Candidate[] = [
 
 export function AIInsightCard() {
     return (
-        <div className="bg-card rounded-2xl p-6 border border-border/50 space-y-4 hover-neon-border">
+        <div className="bg-card rounded-2xl p-6 border border-border/50 space-y-4 hover-neon-border group">
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div className="space-y-3 flex-1">
@@ -56,8 +56,8 @@ export function AIInsightCard() {
                 </div>
 
                 {/* Arrow Icon */}
-                <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted flex-shrink-0">
-                    <ArrowUpRight className="w-3.5 h-3.5 text-primary" />
+                <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted text-primary flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                 </div>
             </div>
 

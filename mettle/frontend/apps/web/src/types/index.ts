@@ -13,6 +13,12 @@ export interface Candidate {
     location?: string;
     skills: string[];
     experienceYears: number;
+    summary?: string;
+    experience?: any[]; // Detailed experience history
+    education?: any[];  // Detailed education history
+    certifications?: any[]; // Certification list
+    appliedJobId?: string;
+    resumeUrl?: string;
 }
 
 export interface Job {

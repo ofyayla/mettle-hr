@@ -79,8 +79,8 @@ export function RecruitmentFunnelChart() {
                     <h3 className="font-semibold text-sm">Recruitment Progress</h3>
                     <p className="text-xs text-muted-foreground mt-1.5">Son 30 gün</p>
                 </div>
-                <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted group-hover:brightness-110 transition-all">
-                    <ArrowUpRight className="w-3.5 h-3.5 text-primary" />
+                <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                 </div>
             </div>
 

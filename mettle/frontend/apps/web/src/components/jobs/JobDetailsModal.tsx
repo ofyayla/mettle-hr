@@ -126,7 +126,7 @@ export function JobDetailsModal({ job, isOpen, onClose, onEdit }: JobDetailsModa
 
                 {/* Header */}
                 <div className="flex items-start justify-between p-6 border-b border-border/50 bg-muted/20">
-                    <div className="space-y-1">
+                    <div className="space-y-3">
                         <div className="flex items-center gap-3">
                             <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
                                 {job.title}

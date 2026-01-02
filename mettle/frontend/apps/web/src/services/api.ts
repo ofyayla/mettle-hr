@@ -24,6 +24,17 @@ export const api = {
                     resolve(candidate);
                 }, DELAY);
             });
+        },
+        update: async (candidate: Candidate): Promise<Candidate> => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const index = mockData.candidates.findIndex(c => c.id === candidate.id);
+                    if (index !== -1) {
+                        mockData.candidates[index] = candidate;
+                    }
+                    resolve(candidate);
+                }, DELAY);
+            });
         }
     },
     jobs: {

@@ -242,7 +242,7 @@ export function JobsPage() {
     });
 
     return (
-        <div className="flex-1 p-8 bg-background overflow-y-auto h-full ">
+        <div className="flex-1 p-8 overflow-y-auto h-full animate-in">
             <div className="space-y-6">
                 <JobsHeader
                     viewMode={viewMode}

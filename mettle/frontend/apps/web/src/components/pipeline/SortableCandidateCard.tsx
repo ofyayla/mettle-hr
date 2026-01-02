@@ -1,13 +1,18 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Candidate } from '@/types';
+import { CandidateCompactCard } from './CandidateCompactCard';
 import { CandidateCard } from '@/components/sourcing/CandidateCard';
 
 interface SortableCandidateCardProps {
     candidate: Candidate;
+    onClick?: (candidate: Candidate) => void;
+    viewMode?: 'grid' | 'list';
+    jobTitle?: string;
+    onDelete?: (candidate: Candidate) => void;
 }
 
-export function SortableCandidateCard({ candidate }: SortableCandidateCardProps) {
+export function SortableCandidateCard({ candidate, onClick, viewMode = 'grid', jobTitle, onDelete }: SortableCandidateCardProps) {
     const {
         attributes,
         listeners,
@@ -25,7 +30,11 @@ export function SortableCandidateCard({ candidate }: SortableCandidateCardProps)
 
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-none">
-            <CandidateCard candidate={candidate} />
+            {viewMode === 'grid' ? (
+                <CandidateCard candidate={candidate} onClick={onClick} onDelete={onDelete} jobTitle={jobTitle} />
+            ) : (
+                <CandidateCompactCard candidate={candidate} onClick={onClick} jobTitle={jobTitle} />
+            )}
         </div>
     );
 }

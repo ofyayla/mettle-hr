@@ -1,3 +1,7 @@
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { api } from '@/services/api';
+import { Candidate } from '@/types';
 import {
     Calendar, ArrowUpRight, Briefcase, Users, UserCheck, TrendingUp, TrendingDown, Minus
 } from 'lucide-react';
@@ -10,32 +14,7 @@ import { RecruitmentStatusCard } from '@/components/dashboard/RecruitmentStatusC
 
 // Mock Data
 
-const kpiData = [
-    {
-        title: 'Active Jobs',
-        value: '24',
-        icon: Briefcase,
-        change: 12,
-        changeType: 'positive',
-        period: 'vs last week'
-    },
-    {
-        title: 'Candidates in Pipeline',
-        value: '142',
-        icon: Users,
-        change: -8,
-        changeType: 'negative',
-        period: 'vs last week'
-    },
-    {
-        title: 'Interviewed in this week',
-        value: '18',
-        icon: UserCheck,
-        change: 0,
-        changeType: 'neutral',
-        period: 'vs last week'
-    },
-];
+
 
 const scheduleItems = [
     {
@@ -104,9 +83,50 @@ const weekDays = [
 ];
 
 export function DashboardPage() {
+    const navigate = useNavigate();
+    const [candidates, setCandidates] = useState<Candidate[]>([]);
+
+    useEffect(() => {
+        api.candidates.list().then(data => {
+            setCandidates(data);
+        });
+    }, []);
+
+    // Calculate dynamic stats
+    const totalCandidates = candidates.length;
+    const interviewedCount = candidates.filter(c => c.status === 'Interview').length;
+    const screenedCount = candidates.filter(c => c.status === 'Screening').length;
+
+    // Merge with static configuration
+    const dynamicKpiData = [
+        {
+            title: 'Active Jobs',
+            value: '24', // Keeping static as fetching jobs wasn't requested here
+            icon: Briefcase,
+            change: 12,
+            changeType: 'positive',
+            period: 'vs last week'
+        },
+        {
+            title: 'Candidates in Pipeline',
+            value: totalCandidates.toString(),
+            icon: Users,
+            change: -8,
+            changeType: 'negative',
+            period: 'vs last week'
+        },
+        {
+            title: 'Interviewed in this week',
+            value: interviewedCount.toString(),
+            icon: UserCheck,
+            change: 0,
+            changeType: 'neutral',
+            period: 'vs last week'
+        },
+    ];
 
     return (
-        <div className="flex h-full bg-background animate-in overflow-hidden">
+        <div className="flex h-full animate-in overflow-hidden">
             {/* MAIN CONTENT AREA */}
             <div className="flex-1 p-8 flex flex-col gap-6 overflow-y-auto">
                 {/* Header Row: Greeting + Stats */}
@@ -126,12 +146,15 @@ export function DashboardPage() {
                         <AIInsightCard />
 
                         {/* Ajanda Widget */}
-                        <div className="bg-card rounded-2xl p-4 border border-border/50 space-y-3 hover-neon-border h-[564px] flex flex-col">
+                        <div className="bg-card rounded-2xl p-4 border border-border/50 space-y-3 hover-neon-border h-[564px] flex flex-col group">
                             <div className="flex items-center justify-between flex-shrink-0">
                                 <h3 className="font-semibold text-sm">Ajanda</h3>
-                                <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted group-hover:bg-primary/20 transition-colors">
-                                    <ArrowUpRight className="w-3.5 h-3.5 text-primary" />
-                                </div>
+                                <button
+                                    onClick={() => navigate('/planner')}
+                                    className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200 cursor-pointer"
+                                >
+                                    <ArrowUpRight className="w-3.5 h-3.5" />
+                                </button>
                             </div>
 
                             {/* Week Days */}
@@ -196,30 +219,51 @@ export function DashboardPage() {
                     <div className="flex-1 flex flex-col gap-4">
                         {/* KPI Cards */}
                         <div className="flex gap-4">
-                            {kpiData.map((kpi, index) => {
+                            {dynamicKpiData.map((kpi, index) => {
                                 const Icon = kpi.icon;
+                                const isClickable = kpi.title === 'Active Jobs';
+
                                 return (
-                                    <div key={index} className="flex-1 bg-card rounded-2xl p-6 border border-border/50 hover-neon-border">
+                                    <div
+                                        key={index}
+                                        onClick={() => isClickable && navigate('/jobs')}
+                                        className={cn(
+                                            "flex-1 bg-card rounded-2xl p-6 border border-border/50 hover-neon-border group",
+                                            isClickable && "cursor-pointer hover:bg-card/80 transition-colors"
+                                        )}
+                                    >
                                         <div className="flex items-start justify-between mb-4">
                                             <h3 className="text-sm font-semibold">{kpi.title}</h3>
-                                            <div className="p-2.5 rounded-lg bg-primary/10 dark:bg-muted">
-                                                <Icon className="w-3.5 h-3.5 text-primary" />
-                                            </div>
+                                            {kpi.title === 'Active Jobs' ? (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate('/jobs');
+                                                    }}
+                                                    className="p-1.5 rounded-lg bg-primary/10 dark:bg-muted text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200 cursor-pointer"
+                                                >
+                                                    <ArrowUpRight className="w-3.5 h-3.5" />
+                                                </button>
+                                            ) : (
+                                                <div className="p-2.5 rounded-lg bg-primary/10 dark:bg-muted">
+                                                    <Icon className="w-3.5 h-3.5 text-primary" />
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="font-bold leading-none" style={{ fontSize: '3rem' }}>{kpi.value}</div>
                                             <div className="flex flex-col">
                                                 <div className={cn(
                                                     "flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-md w-fit",
-                                                    kpi.changeType === 'positive'
+                                                    (kpi.changeType as any) === 'positive'
                                                         ? "text-positive bg-positive/10 dark:bg-positive/20"
-                                                        : kpi.changeType === 'negative'
+                                                        : (kpi.changeType as any) === 'negative'
                                                             ? "text-negative bg-negative/10 dark:bg-negative/20"
                                                             : "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10"
                                                 )}>
-                                                    {kpi.changeType === 'positive' && <TrendingUp className="w-4 h-4" />}
-                                                    {kpi.changeType === 'negative' && <TrendingDown className="w-4 h-4" />}
-                                                    {kpi.changeType === 'neutral' && <Minus className="w-4 h-4" />}
+                                                    {(kpi.changeType as any) === 'positive' && <TrendingUp className="w-4 h-4" />}
+                                                    {(kpi.changeType as any) === 'negative' && <TrendingDown className="w-4 h-4" />}
+                                                    {(kpi.changeType as any) === 'neutral' && <Minus className="w-4 h-4" />}
                                                     <span>{Math.abs(kpi.change)}%</span>
                                                 </div>
                                                 <div className="text-xs text-muted-foreground mt-0.5">{kpi.period}</div>
@@ -235,12 +279,12 @@ export function DashboardPage() {
                             <div className="w-[400px] h-full min-h-0">
                                 <RecruitmentStatusCard
                                     stats={[
-                                        { label: 'Screened', value: 84, trend: { value: '3%', label: 'vs last week', isPositive: true } },
-                                        { label: 'Interviewed', value: 48 }
+                                        { label: 'Screened', value: screenedCount, trend: { value: '3%', label: 'vs last week', isPositive: true } },
+                                        { label: 'Interviewed', value: interviewedCount }
                                     ]}
                                     segments={[
-                                        { label: 'Screened', value: 84, color: 'bg-primary', width: '64%' },
-                                        { label: 'Interviewed', value: 48, color: 'bg-[#0BDAB8]', width: '36%' }
+                                        { label: 'Screened', value: screenedCount, color: 'bg-primary', width: '64%' },
+                                        { label: 'Interviewed', value: interviewedCount, color: 'bg-[#0BDAB8]', width: '36%' }
                                     ]}
                                     insight={{
                                         text: 'Recruitment efficiency has improved by',

@@ -35,13 +35,13 @@ export function Layout({ children }: LayoutProps) {
 
             <div className="flex-1 flex flex-col h-full min-w-0 transition-all duration-300">
                 {/* GLOBAL HEADER */}
-                <header className="h-16 px-6 flex items-center justify-end flex-shrink-0">
+                <header className="h-16 px-6 flex items-center justify-end flex-shrink-0 border-b border-border">
 
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-4 pl-4">
                         {/* Theme Toggle - Segmented Control */}
-                        <div className="flex items-center p-1 bg-muted/30 rounded-md border border-border/40">
+                        <div className="flex items-center p-1 bg-muted/50 rounded-md border border-border">
                             <button
                                 onClick={() => {
                                     setTheme('light');
@@ -80,13 +80,13 @@ export function Layout({ children }: LayoutProps) {
 
                         {/* Action Buttons */}
                         <div className="flex items-center gap-3">
-                            <button className="p-2.5 rounded-md bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all border border-transparent hover:border-border/40">
+                            <button className="p-2.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all border border-transparent hover:border-border/40">
                                 <Calendar className="w-5 h-5" />
                             </button>
-                            <button className="p-2.5 rounded-md bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all border border-transparent hover:border-border/40">
+                            <button className="p-2.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all border border-transparent hover:border-border/40">
                                 <MessageSquare className="w-5 h-5" />
                             </button>
-                            <button className="p-2.5 rounded-md bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all border border-transparent hover:border-border/40 relative">
+                            <button className="p-2.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all border border-transparent hover:border-border/40 relative">
                                 <Bell className="w-5 h-5" />
                                 <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-background"></span>
                             </button>
@@ -105,7 +105,7 @@ export function Layout({ children }: LayoutProps) {
 
                 {/* MAIN CONTENT CONTAINER */}
                 <div className="flex-1 px-4 pb-4 overflow-hidden">
-                    <main className="h-full w-full bg-card rounded-[2rem] border border-border/50 shadow-sm overflow-hidden flex flex-col relative">
+                    <main className="h-full w-full overflow-hidden flex flex-col relative">
                         {/* Content wrapper with scroll */}
                         <div className="flex-1 overflow-y-auto">
                             {children}

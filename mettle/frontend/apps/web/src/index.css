@@ -11,12 +11,12 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 140 90% 45%;
-    /* #A6FE77 Neon Green */
+    --primary: 140.1 91.3% 44.9%;
+    /* #0adb50 Green */
     --primary-foreground: 240 5.9% 10%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
+    --muted: 240 4.8% 91%;
     --muted-foreground: 240 3.8% 46.1%;
     --accent: 140 90% 45%;
     /* Neon Lime for accents too? Or keeping light accent? Let's use neon for active states usually but accent var is often background hover. Let's keep accent mostly neutral but maybe tint it? */
@@ -39,7 +39,7 @@
     /* Sidebar Light - Slightly darker to make card pop */
     --sidebar: 240 5.9% 96%;
     --sidebar-foreground: 240 5.9% 10%;
-    --sidebar-primary: 140 90% 45%;
+    --sidebar-primary: 140.1 91.3% 44.9%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
@@ -47,8 +47,8 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Status Colors */
-    --positive: 140 90% 45%;
-    /* #0BDA51 Green */
+    --positive: 140.1 91.3% 44.9%;
+    /* #0adb50 Green */
     --positive-foreground: 240 5.9% 10%;
     --negative: 350 91% 45%;
     /* #DA0B2D Red */
@@ -57,8 +57,8 @@
     /* Icon Colors - Light Theme */
     --icon-color: 0 0% 5%;
     /* #0C0C0C */
-    --icon-bg: 140 90% 45%;
-    /* #0BDA51 Primary Green */
+    --icon-bg: 140.1 91.3% 44.9%;
+    /* #0adb50 Green */
   }
 
   .dark {
@@ -69,7 +69,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 140 90% 45%;
+    --primary: 140.1 91.3% 44.9%;
     /* Green */
     --primary-foreground: 240 5.9% 10%;
     --secondary: 240 3.7% 15.9%;
@@ -93,7 +93,7 @@
     /* Sidebar Dark - Deep dark to contrast with lighter card */
     --sidebar: 240 10% 2%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 105 99% 73%;
+    --sidebar-primary: 140.1 91.3% 44.9%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
@@ -101,15 +101,15 @@
     --sidebar-ring: 105 99% 73%;
 
     /* Status Colors */
-    --positive: 140 90% 45%;
-    /* #A6FE77 Neon Green */
+    --positive: 140.1 91.3% 44.9%;
+    /* #0adb50 Green */
     --positive-foreground: 240 5.9% 10%;
     --negative: 350 91% 45%;
     /* #DA0B2D Red */
     --negative-foreground: 0 0% 98%;
 
     /* Icon Colors - Dark Theme */
-    --icon-color: 140 90% 45%;
+    --icon-color: 140.1 91.3% 44.9%;
     /* Primary Green */
     --icon-bg: 240 3.7% 15.9%;
     /* Muted dark background */
@@ -134,7 +134,7 @@
   }
 
   .hover-neon-border:hover {
-    border-color: hsl(140, 90%, 45%) !important;
+    border-color: hsl(var(--primary) / 0.2) !important;
   }
 
   .animate-in {
