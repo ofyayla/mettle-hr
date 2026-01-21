@@ -1,5 +1,6 @@
+import { memo } from 'react';
 import { MapPin, Building, Edit, ArrowUpRight, Calendar, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils'; // Assuming this exists based on DashboardPage
+import { cn } from '@/lib/utils';
 import { Job } from '@/types';
 
 interface JobCardProps {
@@ -9,7 +10,7 @@ interface JobCardProps {
     onDelete: (id: string) => void;
 }
 
-export function JobCard({ job, onEdit, onView, onDelete }: JobCardProps) {
+export const JobCard = memo(function JobCard({ job, onEdit, onView, onDelete }: JobCardProps) {
     const statusColors = {
         Open: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
         Draft: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
@@ -117,4 +118,4 @@ export function JobCard({ job, onEdit, onView, onDelete }: JobCardProps) {
             </div>
         </div>
     );
-}
+});

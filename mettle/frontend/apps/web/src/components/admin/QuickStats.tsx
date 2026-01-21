@@ -2,10 +2,11 @@ import {
     FileText, Zap, CheckCircle, Timer, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { QuickStatsData } from '@/types/admin';
 
 interface QuickStatsProps {
     loading: boolean;
-    data: any; // Ideally typed
+    data: QuickStatsData | null;
 }
 
 export function QuickStats({ loading, data }: QuickStatsProps) {

@@ -1,8 +1,21 @@
 import { BarChart3 } from 'lucide-react';
 
+interface FeatureItem {
+    count: number;
+    percentage: number;
+}
+
+interface FeatureData {
+    rag?: FeatureItem;
+    text_to_sql?: FeatureItem;
+    translation?: FeatureItem;
+    summarization?: FeatureItem;
+    speech_to_text?: FeatureItem;
+}
+
 interface FeatureUsageProps {
     loading: boolean;
-    data: any;
+    data: FeatureData | null;
 }
 
 export function FeatureUsage({ loading, data }: FeatureUsageProps) {

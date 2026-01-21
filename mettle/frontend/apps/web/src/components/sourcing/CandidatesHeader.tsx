@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Plus, Search, Filter, LayoutGrid, List, Chrome as ChromeIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CandidatesFilterPanel } from './CandidatesFilterPanel';
+import { Job } from '@/types';
 
 interface Filters {
     status: string;
@@ -9,6 +10,7 @@ interface Filters {
     minScore: string;
     location: string;
     minExperience: string;
+    jobId: string;
 }
 
 interface CandidatesHeaderProps {
@@ -21,6 +23,7 @@ interface CandidatesHeaderProps {
     onClearFilters: () => void;
     onAddCandidate?: () => void;
     totalCandidates: number;
+    jobs?: Job[];
 }
 
 export function CandidatesHeader({
@@ -32,7 +35,8 @@ export function CandidatesHeader({
     onFilterChange,
     onClearFilters,
     onAddCandidate,
-    totalCandidates
+    totalCandidates,
+    jobs
 }: CandidatesHeaderProps) {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
@@ -58,7 +62,8 @@ export function CandidatesHeader({
         filters.source !== '' ||
         filters.minScore !== '' ||
         filters.location !== '' ||
-        filters.minExperience !== '';
+        filters.minExperience !== '' ||
+        (filters.jobId !== '' && filters.jobId !== 'all');
 
     return (
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-8 z-20 relative">
@@ -132,6 +137,7 @@ export function CandidatesHeader({
                                 // Let's keep it open for now as user might want to re-select.
                             }}
                             onClose={() => setIsFilterOpen(false)}
+                            jobs={jobs}
                         />
                     )}
                 </div>

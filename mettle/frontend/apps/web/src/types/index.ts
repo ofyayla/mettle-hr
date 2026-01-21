@@ -1,3 +1,5 @@
+import type { WorkExperience, Education, Certification } from './candidate-form';
+
 export interface Candidate {
     id: string;
     name: string;
@@ -14,9 +16,9 @@ export interface Candidate {
     skills: string[];
     experienceYears: number;
     summary?: string;
-    experience?: any[]; // Detailed experience history
-    education?: any[];  // Detailed education history
-    certifications?: any[]; // Certification list
+    experience?: WorkExperience[];
+    education?: Education[];
+    certifications?: Certification[];
     appliedJobId?: string;
     resumeUrl?: string;
 }

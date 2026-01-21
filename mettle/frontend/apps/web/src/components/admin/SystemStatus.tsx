@@ -3,9 +3,19 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface SystemHealthData {
+    status?: 'healthy' | 'degraded' | 'error';
+    embedding_api?: string;
+    chroma_db?: string;
+    feedback_db?: string;
+    ollama?: string;
+    error?: string;
+    [key: string]: string | undefined; // Index signature for dynamic access
+}
+
 interface SystemStatusProps {
     loading: boolean;
-    data: any;
+    data: SystemHealthData | null;
     onRefresh: () => void;
 }
 

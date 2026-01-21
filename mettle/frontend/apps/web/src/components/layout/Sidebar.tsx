@@ -4,11 +4,13 @@ import {
     Home, Route, CreditCard, Database, FileText,
     Users, Sparkles, Search, Briefcase, Calendar,
     PanelLeftClose,
-    Headphones, Settings, LogOut, X
+    Headphones, Settings, LogOut, X, Command
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 export function Sidebar() {
+    const { logout } = useAuth();
     const location = useLocation();
     // Initialize state directly from local storage to prevent flicker
     const [collapsed, setCollapsed] = useState(() => {
@@ -78,7 +80,7 @@ export function Sidebar() {
                                 <PanelLeftClose className="w-5 h-5 rotate-180" />
                             </div>
                             <div className={cn("transition-opacity duration-200", collapsed ? "group-hover:opacity-0 opacity-100" : "opacity-100")}>
-                                M
+                                <Command className="w-5 h-5" />
                             </div>
                         </div>
 
@@ -86,7 +88,7 @@ export function Sidebar() {
                             "font-bold text-lg tracking-tight transition-opacity duration-300",
                             collapsed ? "hidden w-0" : "opacity-100"
                         )}>
-                            mettle
+                            Mettle ATS
                         </span>
 
                         {/* Tooltip - Only when collapsed and hovered */}
@@ -196,6 +198,7 @@ export function Sidebar() {
                             <span className={cn("truncate", collapsed && "hidden")}>Settings</span>
                         </Link>
                         <button
+                            onClick={logout}
                             className={cn(
                                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20",
                                 collapsed && "justify-center"

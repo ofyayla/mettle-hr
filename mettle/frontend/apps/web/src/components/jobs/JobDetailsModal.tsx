@@ -3,6 +3,8 @@ import { X, Calendar, MapPin, Building, Users, Briefcase, Clock, Edit, Sparkles,
 import { Job, Candidate } from '@/types';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { useCandidatesStore } from '@/store/candidatesStore';
+import { CandidateProfileModal } from '@/components/sourcing/CandidateProfileModal';
 
 
 interface JobDetailsModalProps {
@@ -22,6 +24,22 @@ export function JobDetailsModal({ job, isOpen, onClose, onEdit }: JobDetailsModa
         minScore: '',
     });
 
+    // Use global candidates store for synchronization with main Candidates page
+    const { candidates: allCandidates, fetchCandidates, updateCandidate } = useCandidatesStore();
+
+    // Selected candidate for profile modal
+    const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+
+    // Filter candidates by the current job's ID
+    const jobCandidates = allCandidates.filter(c => c.appliedJobId === job?.id);
+
+    // Fetch candidates when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchCandidates();
+        }
+    }, [isOpen, fetchCandidates]);
+
     // Close filters when clicking outside (simple version)
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -34,47 +52,6 @@ export function JobDetailsModal({ job, isOpen, onClose, onEdit }: JobDetailsModa
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isFilterOpen]);
 
-    const mockCandidates: Candidate[] = [
-        {
-            id: 'c1',
-            name: 'Alice Johnson',
-            email: 'alice@example.com',
-            role: 'Senior Frontend Developer',
-            status: 'New',
-            source: 'LinkedIn',
-            score: 85,
-            tags: ['React', 'TypeScript', 'Node.js'],
-            createdAt: '2023-10-25',
-            skills: ['React', 'TypeScript', 'Tailwind', 'Next.js'],
-            experienceYears: 5
-        },
-        {
-            id: 'c2',
-            name: 'Bob Smith',
-            email: 'bob@example.com',
-            role: 'Full Stack Engineer',
-            status: 'Interview',
-            source: 'Referral',
-            score: 92,
-            tags: ['Python', 'Django', 'React'],
-            createdAt: '2023-10-26',
-            skills: ['Python', 'Django', 'React', 'PostgreSQL'],
-            experienceYears: 7
-        },
-        {
-            id: 'c3',
-            name: 'Charlie Brown',
-            email: 'charlie@example.com',
-            role: 'Frontend Developer',
-            status: 'Rejected',
-            source: 'Indeed',
-            score: 65,
-            tags: ['HTML', 'CSS', 'JavaScript'],
-            createdAt: '2023-10-27',
-            skills: ['HTML', 'CSS', 'JavaScript', 'Vue.js'],
-            experienceYears: 2
-        }
-    ];
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -92,7 +69,7 @@ export function JobDetailsModal({ job, isOpen, onClose, onEdit }: JobDetailsModa
         };
     }, [isOpen, onClose]);
 
-    const filteredCandidates = mockCandidates.filter(c => {
+    const filteredCandidates = jobCandidates.filter(c => {
         const matchesSearch =
             c.name.toLowerCase().includes(candidateSearch.toLowerCase()) ||
             c.role.toLowerCase().includes(candidateSearch.toLowerCase()) ||
@@ -237,7 +214,7 @@ export function JobDetailsModal({ job, isOpen, onClose, onEdit }: JobDetailsModa
                                 >
                                     Candidates
                                     <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">
-                                        {mockCandidates.length}
+                                        {jobCandidates.length}
                                     </span>
                                 </button>
                             </div>
@@ -371,7 +348,8 @@ export function JobDetailsModal({ job, isOpen, onClose, onEdit }: JobDetailsModa
                                             filteredCandidates.map((candidate) => (
                                                 <div
                                                     key={candidate.id}
-                                                    className="group p-4 rounded-xl border border-border/50 hover:border-primary/20 hover:bg-muted/30 transition-all flex items-start justify-between"
+                                                    onClick={() => setSelectedCandidate(candidate)}
+                                                    className="group p-4 rounded-xl border border-border/50 hover:border-primary/20 hover:bg-muted/30 transition-all flex items-start justify-between cursor-pointer"
                                                 >
                                                     <div className="flex gap-4">
                                                         <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center text-sm font-medium text-muted-foreground">
@@ -437,6 +415,17 @@ export function JobDetailsModal({ job, isOpen, onClose, onEdit }: JobDetailsModa
                     )}
                 </div >
             </div >
+
+            {/* Candidate Profile Modal */}
+            <CandidateProfileModal
+                isOpen={!!selectedCandidate}
+                candidate={selectedCandidate}
+                jobTitle={job?.title}
+                onClose={() => setSelectedCandidate(null)}
+                onUpdate={async (updatedCandidate) => {
+                    await updateCandidate(updatedCandidate);
+                }}
+            />
         </div >,
         document.body
     );

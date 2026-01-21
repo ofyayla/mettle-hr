@@ -1,9 +1,10 @@
 import { Clock, MessageCircle, FileText, Code, Languages, List, Mic, Zap, LucideIcon } from 'lucide-react';
 import { cn, formatTimeAgo } from '@/lib/utils';
+import type { ActivityItem } from '@/types/admin';
 
 interface RecentActivitiesProps {
     loading: boolean;
-    data: any[];
+    data: ActivityItem[];
 }
 
 const serviceIcons: Record<string, { icon: LucideIcon, color: string, bg: string }> = {

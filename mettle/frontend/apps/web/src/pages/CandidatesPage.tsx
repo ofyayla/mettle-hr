@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { api } from '@/services/api';
-import { Candidate, Job } from '@/types';
+import { useState, useEffect, useMemo } from 'react';
+import { useCandidatesStore, useJobsStore } from '@/store';
+import { Candidate } from '@/types';
 import { CandidateCard } from '@/components/sourcing/CandidateCard';
 import { CandidatesHeader } from '@/components/sourcing/CandidatesHeader';
 import { CandidateListRow } from '@/components/sourcing/CandidateListRow';
@@ -11,89 +11,106 @@ import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationM
 import { Search, ArrowUpDown } from 'lucide-react';
 
 export function CandidatesPage() {
-    const [candidates, setCandidates] = useState<Candidate[]>([]);
-    const [jobs, setJobs] = useState<Job[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Use centralized stores instead of local state
+    const {
+        candidates,
+        loading,
+        selectedCandidate,
+        fetchCandidates,
+        deleteCandidate,
+        setSelectedCandidate
+    } = useCandidatesStore();
+
+    const { jobs, fetchJobs } = useJobsStore();
+
+    // Local UI state (page-specific, not shared)
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
         status: 'All',
         source: '',
         minScore: '',
         location: '',
-        minExperience: ''
+        minExperience: '',
+        jobId: ''
     });
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
-    const [candidateToEdit, setCandidateToEdit] = useState<Candidate | undefined>(undefined);
-
     const [sortConfig, setSortConfig] = useState<{ key: keyof Candidate | null; direction: 'asc' | 'desc' }>({
         key: 'score',
         direction: 'desc'
     });
 
+    // Modal states
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
+    const [candidateToEdit, setCandidateToEdit] = useState<Candidate | undefined>(undefined);
+
+    // Fetch data on mount
     useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const [candidatesData, jobsData] = await Promise.all([
-                    api.candidates.list(),
-                    api.jobs.list()
-                ]);
-                setCandidates(candidatesData);
-                setJobs(jobsData);
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
+        fetchCandidates();
+        fetchJobs();
+    }, [fetchCandidates, fetchJobs]);
+
+    // Memoized filtered candidates (performance optimization)
+    const filteredCandidates = useMemo(() => {
+        return candidates.filter(c => {
+            // Global Search
+            const matchesSearch =
+                c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                c.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                c.skills.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
+
+            if (!matchesSearch) return false;
+
+            // Specific Filters
+            if (filters.status !== 'All' && c.status !== filters.status) return false;
+            if (filters.source && c.source !== filters.source) return false;
+            if (filters.location && !c.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
+
+            if (filters.minScore) {
+                const minScore = parseInt(filters.minScore);
+                if (!isNaN(minScore) && c.score < minScore) return false;
             }
-        };
-        loadData();
-    }, []);
+
+            if (filters.minExperience) {
+                const minExp = parseInt(filters.minExperience);
+                if (!isNaN(minExp) && c.experienceYears < minExp) return false;
+            }
+
+            // Job filter
+            if (filters.jobId && filters.jobId !== 'all' && c.appliedJobId !== filters.jobId) return false;
+
+            return true;
+        });
+    }, [candidates, searchTerm, filters]);
+
+    // Memoized sorted candidates
+    const sortedCandidates = useMemo(() => {
+        return [...filteredCandidates].sort((a, b) => {
+            if (!sortConfig.key) return 0;
+
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+
+            if (aValue === undefined || bValue === undefined) return 0;
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [filteredCandidates, sortConfig]);
 
     const handleDeleteClick = (candidate: Candidate) => {
         setCandidateToDelete(candidate);
         setIsDeleteModalOpen(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (candidateToDelete) {
-            setCandidates(prev => prev.filter(c => c.id !== candidateToDelete.id));
+            await deleteCandidate(candidateToDelete.id);
             setIsDeleteModalOpen(false);
             setCandidateToDelete(null);
-            setSelectedCandidate(null); // Close profile modal if open
         }
     };
-
-    const filteredCandidates = candidates.filter(c => {
-        // Global Search
-        const matchesSearch =
-            c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.skills.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
-
-        if (!matchesSearch) return false;
-
-        // Specific Filters
-        if (filters.status !== 'All' && c.status !== filters.status) return false;
-        if (filters.source && c.source !== filters.source) return false;
-        if (filters.location && !c.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
-
-        if (filters.minScore) {
-            const minScore = parseInt(filters.minScore);
-            if (!isNaN(minScore) && c.score < minScore) return false;
-        }
-
-        if (filters.minExperience) {
-            const minExp = parseInt(filters.minExperience);
-            if (!isNaN(minExp) && c.experienceYears < minExp) return false;
-        }
-
-        return true;
-        return true;
-    });
 
     const handleSort = (key: keyof Candidate) => {
         setSortConfig(current => ({
@@ -101,18 +118,6 @@ export function CandidatesPage() {
             direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
         }));
     };
-
-    const sortedCandidates = [...filteredCandidates].sort((a, b) => {
-        if (!sortConfig.key) return 0;
-
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
-
-        if (aValue === undefined || bValue === undefined) return 0;
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-    });
 
     const handleFilterChange = (key: string, value: string) => {
         setFilters(prev => ({ ...prev, [key]: value }));
@@ -124,15 +129,9 @@ export function CandidatesPage() {
             source: '',
             minScore: '',
             location: '',
-            minExperience: ''
+            minExperience: '',
+            jobId: ''
         });
-    };
-
-    const handleCandidateUpdate = (updatedCandidate: Candidate) => {
-        setCandidates(prev => prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c));
-        if (selectedCandidate?.id === updatedCandidate.id) {
-            setSelectedCandidate(updatedCandidate);
-        }
     };
 
     return (
@@ -150,6 +149,7 @@ export function CandidatesPage() {
                     setIsAddModalOpen(true);
                 }}
                 totalCandidates={sortedCandidates.length}
+                jobs={jobs}
             />
 
             {loading ? (
@@ -231,67 +231,34 @@ export function CandidatesPage() {
                 onClose={() => setIsAddModalOpen(false)}
                 initialData={candidateToEdit}
                 jobs={jobs}
-                onSave={(newCandidateData) => {
-                    if (candidateToEdit) {
-                        // Update existing
-                        setCandidates(prev => prev.map(c => c.id === candidateToEdit.id ? {
-                            ...c,
-                            name: `${newCandidateData.firstName} ${newCandidateData.lastName}`,
-                            email: newCandidateData.email,
-                            phone: newCandidateData.phone,
-                            role: newCandidateData.role,
-                            location: newCandidateData.location,
-                            skills: newCandidateData.skills,
-                            photoUrl: newCandidateData.photoUrl || c.photoUrl,
-                            summary: newCandidateData.summary,
-                            experience: newCandidateData.experience,
-                            education: newCandidateData.education,
-                            certifications: newCandidateData.certifications,
-                            appliedJobId: newCandidateData.appliedJobId
-                        } : c));
+                onSave={async (newCandidateData) => {
+                    // Store handles the API call and state update
+                    const candidateData: Candidate = {
+                        id: candidateToEdit?.id || `c${Date.now()}`,
+                        name: `${newCandidateData.firstName} ${newCandidateData.lastName}`,
+                        email: newCandidateData.email,
+                        phone: newCandidateData.phone,
+                        role: newCandidateData.role || 'New Candidate',
+                        status: candidateToEdit?.status || 'New',
+                        source: candidateToEdit?.source || 'CareerPage',
+                        score: candidateToEdit?.score || 0,
+                        tags: newCandidateData.skills || [],
+                        createdAt: candidateToEdit?.createdAt || new Date().toISOString(),
+                        location: newCandidateData.location,
+                        skills: newCandidateData.skills || [],
+                        experienceYears: newCandidateData.experience?.length || 0,
+                        photoUrl: newCandidateData.photoUrl,
+                        summary: newCandidateData.summary,
+                        experience: newCandidateData.experience,
+                        education: newCandidateData.education,
+                        certifications: newCandidateData.certifications,
+                        appliedJobId: newCandidateData.appliedJobId
+                    };
 
-                        // Also update selected candidate if it's the one being edited
-                        if (selectedCandidate?.id === candidateToEdit.id) {
-                            setSelectedCandidate(prev => prev ? ({
-                                ...prev,
-                                name: `${newCandidateData.firstName} ${newCandidateData.lastName}`,
-                                email: newCandidateData.email,
-                                phone: newCandidateData.phone,
-                                role: newCandidateData.role,
-                                location: newCandidateData.location,
-                                skills: newCandidateData.skills,
-                                photoUrl: newCandidateData.photoUrl || prev.photoUrl,
-                                summary: newCandidateData.summary,
-                                experience: newCandidateData.experience,
-                                education: newCandidateData.education,
-                                certifications: newCandidateData.certifications,
-                                appliedJobId: newCandidateData.appliedJobId
-                            }) : null);
-                        }
+                    if (candidateToEdit) {
+                        await useCandidatesStore.getState().updateCandidate(candidateData);
                     } else {
-                        // Create new
-                        const newCandidate: Candidate = {
-                            id: Math.random().toString(36).substr(2, 9),
-                            name: `${newCandidateData.firstName} ${newCandidateData.lastName}`,
-                            email: newCandidateData.email,
-                            phone: newCandidateData.phone,
-                            role: newCandidateData.role || 'New Candidate',
-                            status: 'New',
-                            source: 'CareerPage',
-                            score: 0,
-                            tags: newCandidateData.skills || [],
-                            createdAt: new Date().toISOString(),
-                            location: newCandidateData.location,
-                            skills: newCandidateData.skills || [],
-                            experienceYears: newCandidateData.experience.length * 2, // Approximate
-                            photoUrl: newCandidateData.photoUrl,
-                            summary: newCandidateData.summary,
-                            experience: newCandidateData.experience,
-                            education: newCandidateData.education,
-                            certifications: newCandidateData.certifications,
-                            appliedJobId: newCandidateData.appliedJobId
-                        };
-                        setCandidates(prev => [newCandidate, ...prev]);
+                        await useCandidatesStore.getState().addCandidate(candidateData);
                     }
                 }}
             />
@@ -306,7 +273,9 @@ export function CandidatesPage() {
                     setCandidateToEdit(candidate);
                     setIsAddModalOpen(true);
                 }}
-                onUpdate={handleCandidateUpdate}
+                onUpdate={async (updatedCandidate) => {
+                    await useCandidatesStore.getState().updateCandidate(updatedCandidate);
+                }}
             />
 
             {/* Delete Confirmation Modal */}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ArrowUpDown, Plus as PlusIcon } from 'lucide-react';
 import { JobsHeader } from '@/components/jobs/JobsHeader';
 import { JobCard } from '@/components/jobs/JobCard';
@@ -6,107 +6,26 @@ import { JobListRow } from '@/components/jobs/JobListRow';
 import { CreateJobModal } from '@/components/jobs/CreateJobModal';
 import { JobDetailsModal } from '@/components/jobs/JobDetailsModal';
 import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal';
+import { useJobsStore } from '@/store';
 import { Job } from '@/types';
 
-// Mock Data
-const mockJobs: Job[] = [
-    {
-        id: '1',
-        title: 'Senior Frontend Engineer',
-        department: 'Engineering',
-        location: 'Remote',
-        type: 'Full-time',
-        status: 'Open',
-        applicantsCount: 45,
-        createdAt: '2023-10-01',
-        description: "We are looking for an experienced Senior Frontend Engineer to join our core product team. You will be responsible for building high-performance, responsive web applications using React, TypeScript, and modern styling solutions.\n\nThe ideal candidate has a deep understanding of web fundamentals, cares about user experience, and enjoys mentoring junior developers.",
-        requirements: [
-            "5+ years of experience with React and TypeScript",
-            "Deep understanding of browser implementation details",
-            "Experience with state management (Redux, Zustand, or Context)",
-            "Strong knowledge of modern CSS (Tailwind, CSS-in-JS)",
-            "Experience with testing frameworks (Jest, React Testing Library)"
-        ]
-    },
-    {
-        id: '2',
-        title: 'Product Designer',
-        department: 'Product',
-        location: 'New York, NY',
-        type: 'Full-time',
-        status: 'Open',
-        applicantsCount: 28,
-        createdAt: '2023-10-05',
-        description: "Join our design team to shape the future of our product. We need a Product Designer who can bridge the gap between user needs and business goals, creating intuitive and beautiful interfaces.",
-        requirements: [
-            "3+ years of product design experience",
-            "Proficiency in Figma and prototyping tools",
-            "Strong portfolio demonstrating UX/UI skills",
-            "Experience working in an agile environment",
-            "Excellent communication skills"
-        ]
-    },
-    {
-        id: '3',
-        title: 'Marketing Manager',
-        department: 'Marketing',
-        location: 'London, UK',
-        type: 'Full-time',
-        status: 'Draft',
-        applicantsCount: 0,
-        createdAt: '2023-10-10',
-        description: "We're seeking a Marketing Manager to lead our growth initiatives. You'll be responsible for developing and executing marketing strategies to increase brand awareness and drive user acquisition.",
-        requirements: [
-            "4+ years of experience in digital marketing",
-            "Proven track record of successful campaigns",
-            "Experience with SEO, content marketing, and different channels",
-            "Strong analytical skills"
-        ]
-    },
-    {
-        id: '4',
-        title: 'Backend Developer',
-        department: 'Engineering',
-        location: 'Remote',
-        type: 'Contract',
-        status: 'Closed',
-        applicantsCount: 156,
-        createdAt: '2023-09-15',
-        description: "Help us scale our backend infrastructure. We are looking for a Backend Developer with experience in Node.js and distributed systems.",
-        requirements: [
-            "Strong proficiency in Node.js and TypeScript",
-            "Experience with microservices architecture",
-            "Knowledge of PostgreSQL and Redis",
-            "Experience with cloud platforms (AWS/GCP)"
-        ]
-    },
-    {
-        id: '5',
-        title: 'HR Specialist',
-        department: 'HR',
-        location: 'Berlin, DE',
-        type: 'Full-time',
-        status: 'Open',
-        applicantsCount: 12,
-        createdAt: '2023-10-12',
-        description: "We are looking for an HR Specialist to support our growing team. You will handle various HR functions including recruitment, onboarding, and employee relations.",
-        requirements: [
-            "2+ years of experience in HR",
-            "Knowledge of employment laws and regulations",
-            "Excellent interpersonal and organizational skills",
-            "Experience with HRIS software"
-        ]
-    }
-];
-
 export function JobsPage() {
+    // Use centralized store
+    const {
+        jobs,
+        loading,
+        selectedJob,
+        fetchJobs,
+        addJob,
+        updateJob,
+        deleteJob,
+        setSelectedJob
+    } = useJobsStore();
+
+    // Local UI state
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-    // In a real app, this would be state coming from a backend or global store
-    const [jobs, setJobs] = useState<Job[]>(mockJobs);
-
     const [filters, setFilters] = useState({
         title: '',
         location: '',
@@ -116,28 +35,21 @@ export function JobsPage() {
         startDate: '',
         endDate: ''
     });
-
     const [sortConfig, setSortConfig] = useState<{ key: keyof Job | null; direction: 'asc' | 'desc' }>({
         key: 'createdAt',
         direction: 'desc'
     });
-
     const [editingJob, setEditingJob] = useState<Job | null>(null);
     const [viewingJob, setViewingJob] = useState<Job | null>(null);
     const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
 
-    const handleCreateJob = (jobData: Omit<Job, 'id' | 'createdAt' | 'applicantsCount' | 'status'>) => {
-        const newJob: Job = {
-            id: Math.random().toString(36).substr(2, 9),
-            ...jobData,
-            // Cast to specific string literals or ensure form provides them correctly
-            department: jobData.department as any,
-            type: jobData.type as any,
-            status: 'Open',
-            applicantsCount: 0,
-            createdAt: new Date().toISOString()
-        };
-        setJobs([newJob, ...jobs]);
+    // Fetch jobs on mount
+    useEffect(() => {
+        fetchJobs();
+    }, [fetchJobs]);
+
+    const handleCreateJob = async (jobData: Omit<Job, 'id' | 'createdAt' | 'applicantsCount' | 'status'>) => {
+        await addJob(jobData);
     };
 
     const handleEditJob = (job: Job) => {
@@ -149,17 +61,17 @@ export function JobsPage() {
         setViewingJob(job);
     };
 
-    const handleUpdateJob = (updatedJob: Job) => {
-        setJobs(jobs.map(j => j.id === updatedJob.id ? updatedJob : j));
+    const handleUpdateJob = async (updatedJob: Job) => {
+        await updateJob(updatedJob);
     };
 
     const handleDeleteJob = (jobId: string) => {
         setDeletingJobId(jobId);
     };
 
-    const confirmDeleteJob = () => {
+    const confirmDeleteJob = async () => {
         if (deletingJobId) {
-            setJobs(jobs.filter(j => j.id !== deletingJobId));
+            await deleteJob(deletingJobId);
             setDeletingJobId(null);
 
             // If we are deleting the job currently being edited/viewed, close those modals
@@ -172,8 +84,6 @@ export function JobsPage() {
             }
         }
     };
-
-    // ... (sort and filter logic remains same)
 
     const handleSort = (key: keyof Job) => {
         setSortConfig(current => ({
@@ -198,48 +108,64 @@ export function JobsPage() {
         });
     };
 
-    // ... (rest of filtering logic)
+    // Memoized filtered jobs
+    const filteredJobs = useMemo(() => {
+        return jobs.filter(job => {
+            // Global Search
+            const matchesSearch =
+                job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.location.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const filteredJobs = jobs.filter(job => {
-        // Global Search
-        const matchesSearch =
-            job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            job.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            job.location.toLowerCase().includes(searchQuery.toLowerCase());
+            if (!matchesSearch) return false;
 
-        if (!matchesSearch) return false;
+            // Specific Filters
+            if (filters.title && !job.title.toLowerCase().includes(filters.title.toLowerCase())) return false;
+            if (filters.location && !job.location.toLowerCase().includes(filters.location.toLowerCase())) return false;
+            if (filters.status && job.status !== filters.status) return false;
 
-        // Specific Filters
-        if (filters.title && !job.title.toLowerCase().includes(filters.title.toLowerCase())) return false;
-        if (filters.location && !job.location.toLowerCase().includes(filters.location.toLowerCase())) return false;
-        if (filters.status && job.status !== filters.status) return false;
+            const applicants = job.applicantsCount;
+            if (filters.minApplicants && applicants < parseInt(filters.minApplicants)) return false;
+            if (filters.maxApplicants && applicants > parseInt(filters.maxApplicants)) return false;
 
-        const applicants = job.applicantsCount;
-        if (filters.minApplicants && applicants < parseInt(filters.minApplicants)) return false;
-        if (filters.maxApplicants && applicants > parseInt(filters.maxApplicants)) return false;
+            const jobDate = new Date(job.createdAt);
+            if (filters.startDate && jobDate < new Date(filters.startDate)) return false;
+            if (filters.endDate) {
+                const endDate = new Date(filters.endDate);
+                endDate.setHours(23, 59, 59, 999);
+                if (jobDate > endDate) return false;
+            }
 
-        const jobDate = new Date(job.createdAt);
-        if (filters.startDate && jobDate < new Date(filters.startDate)) return false;
-        if (filters.endDate) {
-            const endDate = new Date(filters.endDate);
-            endDate.setHours(23, 59, 59, 999); // Include the entire end date
-            if (jobDate > endDate) return false;
-        }
+            return true;
+        });
+    }, [jobs, searchQuery, filters]);
 
-        return true;
-    });
+    // Memoized sorted jobs
+    const sortedJobs = useMemo(() => {
+        return [...filteredJobs].sort((a, b) => {
+            if (!sortConfig.key) return 0;
 
-    const sortedJobs = [...filteredJobs].sort((a, b) => {
-        if (!sortConfig.key) return 0;
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
 
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+            if (aValue === undefined || bValue === undefined) return 0;
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [filteredJobs, sortConfig]);
 
-        if (aValue === undefined || bValue === undefined) return 0; // Guard against undefined
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-    });
+    if (loading) {
+        return (
+            <div className="flex-1 p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="h-72 bg-muted/20 animate-pulse rounded-xl border border-border/50"></div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 p-8 overflow-y-auto h-full animate-in">
@@ -262,7 +188,7 @@ export function JobsPage() {
                     isOpen={isCreateModalOpen}
                     onClose={() => {
                         setIsCreateModalOpen(false);
-                        setEditingJob(null); // Reset editing job on close
+                        setEditingJob(null);
                     }}
                     onCreate={handleCreateJob}
                     initialData={editingJob}
@@ -349,5 +275,3 @@ export function JobsPage() {
         </div>
     );
 }
-
-

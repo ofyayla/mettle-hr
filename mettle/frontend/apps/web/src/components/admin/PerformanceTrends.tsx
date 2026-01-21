@@ -1,9 +1,14 @@
 import { Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface PerformanceData {
+    hourly_usage?: number[];
+    hourly_counts?: number[];
+}
+
 interface PerformanceTrendsProps {
     loading: boolean;
-    data: any; // Contains hourly_usage array [pct, pct...] and hourly_counts
+    data: PerformanceData | null;
 }
 
 export function PerformanceTrends({ loading, data }: PerformanceTrendsProps) {

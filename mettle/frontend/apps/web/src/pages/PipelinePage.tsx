@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
     DndContext,
     DragOverlay,
-    closestCorners,
     KeyboardSensor,
     PointerSensor,
     useSensor,
@@ -12,21 +11,20 @@ import {
     DragOverEvent
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { api } from '@/services/api';
-import { Candidate, Job } from '@/types';
+import { useCandidatesStore, useJobsStore } from '@/store';
+import { Candidate } from '@/types';
 import { BoardColumn } from '@/components/pipeline/BoardColumn';
 import { CandidateCard } from '@/components/sourcing/CandidateCard';
 import { Search, Filter, LayoutGrid, List } from 'lucide-react';
 import { CANDIDATE_STATUS_COLORS, CANDIDATE_STATUS_LABELS } from '@/constants/candidate';
 import { CandidateProfileModal } from '@/components/sourcing/CandidateProfileModal';
-import { CandidateListRow } from '@/components/sourcing/CandidateListRow';
 import { CandidateCompactCard } from '@/components/pipeline/CandidateCompactCard';
 import { cn } from '@/lib/utils';
 import { customCollisionDetection } from '@/lib/dnd-utils';
 import { CandidatesFilterPanel } from '@/components/sourcing/CandidatesFilterPanel';
-import { useRef } from 'react';
 import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal';
 import { AddCandidateModal } from '@/components/sourcing/AddCandidateModal';
+import { useClickOutside } from '@/hooks';
 
 const COLUMNS = [
     { id: 'New', title: CANDIDATE_STATUS_LABELS['New'], color: CANDIDATE_STATUS_COLORS['New'] },
@@ -37,13 +35,45 @@ const COLUMNS = [
 ];
 
 export function PipelinePage() {
-    const [candidates, setCandidates] = useState<Candidate[]>([]);
-    const [jobs, setJobs] = useState<Job[]>([]);
+    // Use centralized stores
+    const {
+        candidates,
+        loading,
+        selectedCandidate,
+        fetchCandidates,
+        deleteCandidate,
+        updateCandidateStatus,
+        setSelectedCandidate
+    } = useCandidatesStore();
+
+    const { jobs, fetchJobs } = useJobsStore();
+
+    // DnD state
     const [activeId, setActiveId] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+
+    // Local UI state
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+    const [filters, setFilters] = useState({
+        status: 'All',
+        source: '',
+        minScore: '',
+        location: '',
+        minExperience: '',
+        jobId: 'all'
+    });
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    // Modal states
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [candidateToEdit, setCandidateToEdit] = useState<Candidate | undefined>(undefined);
+
+    const filterRef = useRef<HTMLDivElement>(null);
+
+    // Use custom hook instead of manual effect
+    useClickOutside(filterRef, () => setIsFilterOpen(false), isFilterOpen);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -56,24 +86,11 @@ export function PipelinePage() {
         })
     );
 
+    // Fetch data on mount
     useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const [candidatesData, jobsData] = await Promise.all([
-                    api.candidates.list(),
-                    api.jobs.list()
-                ]);
-                setCandidates(candidatesData);
-                setJobs(jobsData);
-            } catch (error) {
-                console.error('Error loading pipeline data:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadData();
-    }, []);
+        fetchCandidates();
+        fetchJobs();
+    }, [fetchCandidates, fetchJobs]);
 
     const findContainer = (id: string) => {
         if (COLUMNS.find(col => col.id === id)) {
@@ -101,14 +118,8 @@ export function PipelinePage() {
             return;
         }
 
-        setCandidates((prev) => {
-            return prev.map(c => {
-                if (c.id === active.id) {
-                    return { ...c, status: overContainer as any };
-                }
-                return c;
-            });
-        });
+        // Visual update during drag (store handles this)
+        updateCandidateStatus(active.id as string, overContainer as Candidate['status']);
     };
 
     const handleDragEnd = async (event: DragEndEvent) => {
@@ -121,62 +132,12 @@ export function PipelinePage() {
             overContainer &&
             activeContainer !== overContainer
         ) {
-            // Optimistic update
-            const updatedCandidates = candidates.map(c => {
-                if (c.id === active.id) {
-                    return { ...c, status: overContainer as any };
-                }
-                return c;
-            });
-            setCandidates(updatedCandidates);
-
-            // API Update
-            const candidateToUpdate = candidates.find(c => c.id === active.id);
-            if (candidateToUpdate) {
-                try {
-                    await api.candidates.update({
-                        ...candidateToUpdate,
-                        status: overContainer as any
-                    });
-                } catch (error) {
-                    console.error('Failed to update candidate status', error);
-                }
-            }
+            // Store handles the API call and state update
+            await updateCandidateStatus(active.id as string, overContainer as Candidate['status']);
         }
 
         setActiveId(null);
     };
-
-    const [filters, setFilters] = useState({
-        status: 'All',
-        source: '',
-        minScore: '',
-        location: '',
-        minExperience: '',
-        jobId: 'all'
-    });
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const filterRef = useRef<HTMLDivElement>(null);
-
-    // Close filter panel on click outside
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
-                setIsFilterOpen(false);
-            }
-        }
-        if (isFilterOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isFilterOpen]);
-
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [candidateToEdit, setCandidateToEdit] = useState<Candidate | undefined>(undefined);
 
     const handleDeleteClick = (candidate: Candidate) => {
         setCandidateToDelete(candidate);
@@ -190,65 +151,55 @@ export function PipelinePage() {
 
     const confirmDelete = async () => {
         if (candidateToDelete) {
-            try {
-                // Assuming API delete exists or just updating state for now based on how candidate deletion works
-                // Usually we would call api.candidates.delete(candidateToDelete.id)
-                // But looking at CandidatesPage, it just updates local state. I'll maintain consistency or verify API availability.
-                // CandidatesPage does: setCandidates(prev => prev.filter(c => c.id !== candidateToDelete.id));
-                // PipelinePage syncs with API on drag end, so I should probably update state locally too.
-                // If there is an API method, I should use it. CandidatesPage uses mocked data mostly? 
-                // Wait, CandidatesPage imports api but handleDeleteClick there updates local state. 
-                // Let's mirror that for now and if there is a real backend call, it should be added.
-                // Actually PipelinePage calls api.candidates.list() so it likely expects persistence.
-                // I will add the state update.
-
-                setCandidates(prev => prev.filter(c => c.id !== candidateToDelete.id));
-                setIsDeleteModalOpen(false);
-                setCandidateToDelete(null);
-                setSelectedCandidate(null); // Close profile modal if open
-            } catch (error) {
-                console.error('Failed to delete candidate', error);
-            }
+            await deleteCandidate(candidateToDelete.id);
+            setIsDeleteModalOpen(false);
+            setCandidateToDelete(null);
         }
     };
 
     const activeCandidate = activeId ? candidates.find(c => c.id === activeId) : null;
 
-    const filteredCandidates = candidates.filter(c => {
-        // Job Filter
-        if (filters.jobId && filters.jobId !== 'all' && c.appliedJobId !== filters.jobId) return false;
+    // Memoized filtered candidates
+    const filteredCandidates = useMemo(() => {
+        return candidates.filter(c => {
+            // Job Filter
+            if (filters.jobId && filters.jobId !== 'all' && c.appliedJobId !== filters.jobId) return false;
 
-        // Search Filter
-        const matchesSearch =
-            !searchQuery ||
-            c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            c.role.toLowerCase().includes(searchQuery.toLowerCase());
+            // Search Filter
+            const matchesSearch =
+                !searchQuery ||
+                c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                c.role.toLowerCase().includes(searchQuery.toLowerCase());
 
-        if (!matchesSearch) return false;
+            if (!matchesSearch) return false;
 
-        // Advanced Filters
-        if (filters.status !== 'All' && c.status !== filters.status) return false;
-        if (filters.source && c.source !== filters.source) return false;
-        if (filters.location && !c.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
+            // Advanced Filters
+            if (filters.status !== 'All' && c.status !== filters.status) return false;
+            if (filters.source && c.source !== filters.source) return false;
+            if (filters.location && !c.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
 
-        if (filters.minScore) {
-            const minScore = parseInt(filters.minScore);
-            if (!isNaN(minScore) && c.score < minScore) return false;
-        }
+            if (filters.minScore) {
+                const minScore = parseInt(filters.minScore);
+                if (!isNaN(minScore) && c.score < minScore) return false;
+            }
 
-        if (filters.minExperience) {
-            const minExp = parseInt(filters.minExperience);
-            if (!isNaN(minExp) && c.experienceYears < minExp) return false;
-        }
+            if (filters.minExperience) {
+                const minExp = parseInt(filters.minExperience);
+                if (!isNaN(minExp) && c.experienceYears < minExp) return false;
+            }
 
-        return true;
-    });
+            return true;
+        });
+    }, [candidates, searchQuery, filters]);
+
+    const hasActiveFilters = filters.status !== 'All' || filters.source !== '' ||
+        filters.minScore !== '' || filters.location !== '' || filters.minExperience !== '';
 
     if (loading) return <div className="p-8">Loading pipeline...</div>;
 
     return (
         <div className="flex flex-col h-full overflow-hidden animate-in">
-            {/* Header - Consistent with JobsPage */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-8 pb-4 z-20 relative">
                 <div>
                     <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 flex items-center gap-2">
@@ -278,8 +229,6 @@ export function PipelinePage() {
                         </button>
                     </div>
 
-
-
                     {/* Search */}
                     <div className="relative flex-1 sm:flex-initial">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -298,13 +247,13 @@ export function PipelinePage() {
                             onClick={() => setIsFilterOpen(!isFilterOpen)}
                             className={cn(
                                 "p-2 rounded-xl border transition-all relative",
-                                isFilterOpen || (filters.status !== 'All' || filters.source !== '' || filters.minScore !== '' || filters.location !== '' || filters.minExperience !== '')
+                                isFilterOpen || hasActiveFilters
                                     ? "bg-primary/10 border-primary/50 text-primary"
                                     : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border/40 text-muted-foreground hover:text-foreground"
                             )}
                         >
                             <Filter className="w-4 h-4" />
-                            {(filters.status !== 'All' || filters.source !== '' || filters.minScore !== '' || filters.location !== '' || filters.minExperience !== '') && (
+                            {hasActiveFilters && (
                                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background" />
                             )}
                         </button>
@@ -378,68 +327,33 @@ export function PipelinePage() {
                 onClose={() => setIsAddModalOpen(false)}
                 initialData={candidateToEdit}
                 jobs={jobs}
-                onSave={(newCandidateData) => {
-                    if (candidateToEdit) {
-                        // Update existing
-                        console.log('Update existing candidate', newCandidateData);
-                        setCandidates(prev => prev.map(c => c.id === candidateToEdit.id ? {
-                            ...c,
-                            name: `${newCandidateData.firstName} ${newCandidateData.lastName}`,
-                            email: newCandidateData.email,
-                            phone: newCandidateData.phone,
-                            role: newCandidateData.role,
-                            location: newCandidateData.location,
-                            skills: newCandidateData.skills,
-                            photoUrl: newCandidateData.photoUrl || c.photoUrl,
-                            summary: newCandidateData.summary,
-                            experience: newCandidateData.experience,
-                            education: newCandidateData.education,
-                            certifications: newCandidateData.certifications,
-                            appliedJobId: newCandidateData.appliedJobId
-                        } : c));
+                onSave={async (newCandidateData) => {
+                    const candidateData: Candidate = {
+                        id: candidateToEdit?.id || `c${Date.now()}`,
+                        name: `${newCandidateData.firstName} ${newCandidateData.lastName}`,
+                        email: newCandidateData.email,
+                        phone: newCandidateData.phone,
+                        role: newCandidateData.role || 'New Candidate',
+                        status: candidateToEdit?.status || 'New',
+                        source: candidateToEdit?.source || 'CareerPage',
+                        score: candidateToEdit?.score || 0,
+                        tags: newCandidateData.skills || [],
+                        createdAt: candidateToEdit?.createdAt || new Date().toISOString(),
+                        location: newCandidateData.location,
+                        skills: newCandidateData.skills || [],
+                        experienceYears: newCandidateData.experience?.length || 0,
+                        photoUrl: newCandidateData.photoUrl,
+                        summary: newCandidateData.summary,
+                        experience: newCandidateData.experience,
+                        education: newCandidateData.education,
+                        certifications: newCandidateData.certifications,
+                        appliedJobId: newCandidateData.appliedJobId
+                    };
 
-                        // Also update selected candidate if it's the one being edited
-                        if (selectedCandidate?.id === candidateToEdit.id) {
-                            setSelectedCandidate(prev => prev ? ({
-                                ...prev,
-                                name: `${newCandidateData.firstName} ${newCandidateData.lastName}`,
-                                email: newCandidateData.email,
-                                phone: newCandidateData.phone,
-                                role: newCandidateData.role,
-                                location: newCandidateData.location,
-                                skills: newCandidateData.skills,
-                                photoUrl: newCandidateData.photoUrl || prev.photoUrl,
-                                summary: newCandidateData.summary,
-                                experience: newCandidateData.experience,
-                                education: newCandidateData.education,
-                                certifications: newCandidateData.certifications,
-                                appliedJobId: newCandidateData.appliedJobId
-                            }) : null);
-                        }
+                    if (candidateToEdit) {
+                        await useCandidatesStore.getState().updateCandidate(candidateData);
                     } else {
-                        // Create new
-                        const newCandidate: Candidate = {
-                            id: Math.random().toString(36).substr(2, 9),
-                            name: `${newCandidateData.firstName} ${newCandidateData.lastName}`,
-                            email: newCandidateData.email,
-                            phone: newCandidateData.phone,
-                            role: newCandidateData.role || 'New Candidate',
-                            status: 'New',
-                            source: 'CareerPage',
-                            score: 0,
-                            tags: newCandidateData.skills || [],
-                            createdAt: new Date().toISOString(),
-                            location: newCandidateData.location,
-                            skills: newCandidateData.skills || [],
-                            experienceYears: newCandidateData.experience.length * 2, // Approximate
-                            photoUrl: newCandidateData.photoUrl,
-                            summary: newCandidateData.summary,
-                            experience: newCandidateData.experience,
-                            education: newCandidateData.education,
-                            certifications: newCandidateData.certifications,
-                            appliedJobId: newCandidateData.appliedJobId
-                        };
-                        setCandidates(prev => [newCandidate, ...prev]);
+                        await useCandidatesStore.getState().addCandidate(candidateData);
                     }
                 }}
             />
