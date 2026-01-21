@@ -18,6 +18,19 @@ api.interceptors.request.use((config) => {
 
 export const authService = {
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
+        // MOCK LOGIN implementation
+        console.log('Mock login with:', credentials);
+        const mockToken = 'mock_jwt_token_12345';
+        localStorage.setItem('token', mockToken);
+        // Store email for mock user retrieval if we wanted to be fancy, but static is fine
+        localStorage.setItem('mock_user_email', credentials.email);
+
+        return {
+            access_token: mockToken,
+            token_type: 'bearer'
+        };
+
+        /* Original implementation
         const formData = new FormData();
         formData.append('username', credentials.email);
         formData.append('password', credentials.password);
@@ -31,6 +44,7 @@ export const authService = {
             localStorage.setItem('token', response.data.access_token);
         }
         return response.data;
+        */
     },
 
     async signup(data: SignupCredentials): Promise<User> {
@@ -39,8 +53,20 @@ export const authService = {
     },
 
     async getCurrentUser(): Promise<User> {
+        // MOCK USER implementation
+        const email = localStorage.getItem('mock_user_email') || 'mock@example.com';
+        return {
+            id: 'mock-user-1',
+            email: email,
+            full_name: 'Mock User',
+            role: 'admin',
+            is_active: true
+        };
+
+        /* Original implementation
         const response = await api.get<User>('/auth/me');
         return response.data;
+        */
     },
 
     logout() {
